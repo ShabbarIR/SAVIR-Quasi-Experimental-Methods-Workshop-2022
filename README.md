@@ -12,8 +12,8 @@ Julie Kafka
 
 ### Agenda
 ____________________________________________________________________
-(First 50 min) 
 **Theory (discuss assumptions using graphs/ use published literature)**
+____________________________________________________________________
 
 Methods for policy analysis
 ```
