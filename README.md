@@ -15,9 +15,10 @@ ____________________________________________________________________
 (First 50 min) 
 **Theory (discuss assumptions using graphs/ use published literature)**
 
-- Policy analysis
-- Methods for policy analysis
-      - Difference in Differences (DiD)
-      - Synthetic controls + DiD
-      - Controlled Interrupted Time Series (CITS)
-      - CITS+Synthetic controls
+Methods for policy analysis
+```
+Difference in Differences (DiD)
+Synthetic controls + DiD
+Controlled Interrupted Time Series (CITS)
+CITS+Synthetic controls
+```
