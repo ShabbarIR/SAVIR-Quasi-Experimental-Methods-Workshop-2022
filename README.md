@@ -40,3 +40,29 @@ Code
 ```
 
 *10 Min Break*
+__________________________________________________________________
+**Real World Evidence - Analyses** - continued (50 min)
+__________________________________________________________________
+Synthetic Controls
+```
+Building synthetic controls
+Using synthetic controls with DiD
+Using synthetic controls with CITS
+Compare CITS; DiD; SC-DiD; SC-CITS
+
+Discuss assumptions
+
+Other RWE examples and Single series ITS
+```
+
+*10 Min Break*
+__________________________________________________________________
+Practice (last 50 min)
+__________________________________________________________________
+```
+Intro to the sample data
+Intro to the code
+Exercise *\_('')_/*
+Fill in the table with results
+Q & A throughout as needed
+```
