@@ -17,7 +17,7 @@ ____________________________________________________________________
 
 - Policy analysis
 - Methods for policy analysis
--   Difference in Differences (DiD)
--   Synthetic controls + DiD
--   Controlled Interrupted Time Series (CITS)
--   CITS+Synthetic controls
+      - Difference in Differences (DiD)
+      - Synthetic controls + DiD
+      - Controlled Interrupted Time Series (CITS)
+      - CITS+Synthetic controls
