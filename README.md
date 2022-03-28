@@ -27,3 +27,15 @@ CITS+Synthetic controls
 ___________________________________________________________________
 **Real World Evidence - Analyses**                                       (50 min)
 ___________________________________________________________________
+Electronic filing of Domestic Violence Protective orders in North Carolina
+```
+Selecting Intervention and control counties
+Data setup for Interrupted Time series analysis
+CITS analysis and results
+Code
+```
+DiD analysis and results
+Code
+```
+
+*10 Min Break*
