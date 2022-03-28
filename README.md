@@ -12,7 +12,7 @@ Julie Kafka
 
 ### Agenda
 ____________________________________________________________________
-**Theory (discuss assumptions using graphs/ use published literature)**
+**Theory (discuss assumptions using graphs/ use published literature)**   (50 min) 
 ____________________________________________________________________
 
 Methods for policy analysis
@@ -22,3 +22,8 @@ Synthetic controls + DiD
 Controlled Interrupted Time Series (CITS)
 CITS+Synthetic controls
 ```
+
+*10 Min Break*
+___________________________________________________________________
+**Real World Evidence - Analyses**                                       (50 min)
+___________________________________________________________________
