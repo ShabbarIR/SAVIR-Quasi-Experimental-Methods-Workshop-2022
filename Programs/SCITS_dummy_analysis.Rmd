@@ -1,0 +1,221 @@
+---
+title: "Creating a Synthetic Control and Preparing Data for SCITS Analysis"
+author: "Kate Vinita Fitch"
+output:
+  html_document: default
+---
+
+# Package and dataset import
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(Synth)
+
+dat <- readRDS("./dat_deidentified.rds")
+
+
+```
+
+First let's view the data so that we can understand how it's structured. Fortunately we've done the cleaning for you!
+
+```{r, echo = FALSE}
+
+as_tibble(dat)
+
+```
+
+### As you look through the data, here are some things to observe:
+
+- There is one row for study time point, from 96 months prior to intervention to 18 months after intervention
+- We have one intervention county called "INTERVENTION" with id of 1
+- We have 12 control counties with ids of 2-13
+- Group = 1 in the intervention county and 0 in the control counties
+- Policy = 1 in the intervention county after the time of intervention
+- We have several predictor variables related to county demographics and other features
+- We have one outcome variable called "outcome"
+
+### Let's build our synthetic controls!
+
+We will be telling the algorithm to build a synthetic control based on several predictor variables that maximizes the trend fit prior to the intervention time. 
+
+```{r, results = FALSE, message = FALSE, warning = FALSE}
+
+dataprep.out <- dataprep(foo = dat, # data set name
+                         predictors = c("pop"), # select an initial predictor
+                         predictors.op = "mean", # we are modeling based on mean value in each county
+                         time.predictors.prior = c(-96:-1), # note the study time prior to intervention
+                         special.predictors = list( # add more predictors
+                           
+                            #study time prior to intervention, every 12 months
+                           list("pct_male", seq(-96,-1,12), "mean"),
+                           list("pct_aian", seq(-96,-1,12), "mean"),
+                           list("pct_asian", seq(-96,-1,12), "mean"),
+                           list("pct_black", seq(-96,-1,12), "mean"),
+                           list("pct_other", seq(-96,-1,12), "mean"),
+                           list("male_unemp", seq(-96,-1,12), "mean"),
+                           list("total_unemp", seq(-96,-1,12), "mean"),
+                           list("fm_unemp_ratio", seq(-96,-1,12), "mean"),
+                           list("bachelors", seq(-96,-1,12), "mean"),
+                           list("median_household_income", seq(-96,-1,12), "mean"),
+                           list("officers_per_100k", seq(-96,-1,12), "mean"),
+                           
+                            # Rural occurs only once during the census year, 
+                           # so we will just average based on one month in that period
+                      
+                           list("rural", -76, "mean")
+                         ),
+                         
+                         dependent = "outcome", # name the outcome variable
+                         unit.variable = "id", # county identifier
+                         unit.names.variable = "county", # county name
+                         time.variable = "study_time", # time variable
+                         treatment.identifier = 1, # id 1 is the intervention county
+                         controls.identifier = c(2:13), # the remaining ids are control counties
+                         time.optimize.ssr = c(-96:-1), # optimize fit from study times -96 to -1
+                         time.plot = c(-96:18)) # produce predictive values up to time 18
+
+# Outputting the synthetic control algorithm results
+synth.out <- synth(dataprep.out)
+
+# Outputting the weights of the 12 control counties and attaching to it the names of those counties
+weights <- round(synth.out$solution.w,4)
+weights <- cbind(county_id = rownames(weights), weights)
+
+# Outputting the case (intervention) and synthetic control outcome values
+path.case <- dataprep.out$Y1plot
+path.synth <- dataprep.out$Y0plot %*% synth.out$solution.w
+
+```
+
+Below we can see how the donor counties were weighted in building the synthetic control county.
+
+```{r, echo = FALSE}
+
+as_tibble(weights)
+
+```
+
+## Constructing dataset for use in time series analysis
+
+Now that we've constructed the synthetic control, we need to construct a dataset that includes the outcome variable at each time point for both the intervention and synthetic control counties.
+
+First, restrict the analysis dataset to only the county, study time, and outcome.
+
+```{r}
+
+outcome <- dat %>%
+  dplyr::select(county, study_time, outcome)
+
+as_tibble(outcome)
+
+```
+
+Next, Widen the dataset to have only one row per time with each county's outcome in a column.
+
+```{r}
+
+outcome_wide <- pivot_wider(outcome, names_from = county, values_from = outcome)
+
+as_tibble(outcome_wide)
+
+```
+Next, we'll append the outcome variables for the synthetic control (path.synth) and intervention (path.case) counties from the Synth package. Importantly, the path.case column should match the intervention county's column and that's a good visual check to perform here.
+
+```{r}
+
+# Make the intervention and synthetic control outcome variable list into a dataframe with the column header indicating its identity
+
+path.case <- as.data.frame(path.case)
+names(path.case)[1] <- "path.case"
+path.synth <- as.data.frame(path.synth)
+names(path.synth)[1] <- "path.synth"
+
+# Merge the intervention and synthetic control outcome data to the wide outcome dataset
+dat_synth <- cbind(outcome_wide, path.case, path.synth)
+
+# Remove the (non-synthetic) control county columns
+dat_synth <- dat_synth %>%
+  select(study_time, INTERVENTION, path.case, path.synth)
+  
+
+```
+
+```{r, echo = FALSE}
+
+as_tibble(dat_synth)
+
+```
+
+Now we'll need to shift back from wide to long with separate entries at each time point for the intervention and synthetic control counties. First we'll create a new column called "group" and stack the outcome variable for path.case and path.synth instead of having a separate column for each.
+
+```{r}
+
+dat_synth_long <- gather(dat_synth, group, outcome, c(path.case, path.synth),
+                       factor_key = TRUE)
+
+```
+
+```{r, echo = FALSE}
+
+as_tibble(dat_synth_long)
+
+```
+
+Now we will change the group column to make it an indicator variable with 1 for the intervention county (path.case) and 0 for the synthetic control county (path.synth). We will also drop the INTERVENTION column, as we no longer need it.
+
+```{r}
+
+dat_synth_long <- dat_synth_long %>%
+  mutate(group = ifelse(group == "path.case", 1, 0)) %>%
+  select(-INTERVENTION)
+
+```
+
+```{r, echo = FALSE}
+
+as_tibble(dat_synth_long)
+
+```
+## Creating variables for time series analysis
+
+We need to create a number of additional variables for the time series analysis done in SAS, and can easily do so with the dplyr::mutate function.
+
+```{r}
+
+scits_dat <- dat_synth_long %>%
+  mutate(
+    # Policy = 1 if study_time is > 0 
+    policy = ifelse(study_time > 0, 1, 0),
+    
+    # Posttime is equal to study time only after intervention, else 0
+    posttime = ifelse(study_time > 0, study_time, 0),
+    
+    # Group time is equal to the study time in the intervention group, else 0
+    group_time = ifelse(group == 1, study_time, 0),
+    
+    # Group policy is equal to policy in the intervention group, else 0
+    group_policy = ifelse(group == 1, policy, 0),
+    
+    # Group pposttime is equal to the posttime in the intervention group, else 0
+    group_posttime = ifelse(group ==1, posttime, 0)) %>%
+  
+  # Organize the columns for easy viewing
+  select(study_time, outcome, group, policy, posttime, group_time, group_policy, group_posttime)
+
+```
+
+```{r, echo = FALSE}
+
+as_tibble(scits_dat)
+
+```
+### Now export the data into a .csv file for easy use in SAS!
+```{r export}
+
+
+write.csv(scits_dat, "./dummy_scits.csv")
+
+```
