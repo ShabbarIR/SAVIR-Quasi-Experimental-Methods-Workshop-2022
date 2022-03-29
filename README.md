@@ -67,5 +67,5 @@ Fill in the table with results
 Q & A throughout as needed
 ```
 __________________________________________________________________
-Feedback
+Thanks for attending! Please fill out our feedback form here:
 https://forms.gle/nh1WRupQ3aCeLnkV9 
